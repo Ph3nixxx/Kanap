@@ -2,7 +2,7 @@ let addProduct = JSON.parse(localStorage.getItem("product"));
 
 let someProduct = [];
 
-/* Afichage des infos produits dans le panier pour le(s) produit(s) choisi(s) */
+/* Afichage des infos produits pour le(s) produit(s) choisi(s) */
 
 let cartDisplay = async () => {
     if(addProduct){
@@ -42,7 +42,7 @@ let cartDisplay = async () => {
 
 cartDisplay();
 
-/* Modification de la quantité via les flèches de l'input de chaque produit/couleur */
+/* Modification de la quantité via les flèches de l'input */
 
 let changeQuantity = async () => {
   await cartDisplay;
@@ -63,7 +63,7 @@ let changeQuantity = async () => {
   });
 };
 
-/* Suppression d'un produit/couleur lorsque l'on clique sur le bouton "supprimer" d'un des produits du panier */
+/* Suppression d'un produit lorsque l'on clique sur le bouton "supprimer" d'un des produits du panier */
 
 let removeProduct = async (cartDisplay) => {
   await cartDisplay;
@@ -111,7 +111,7 @@ let totalAmount = async (cartDisplay, plusQuantity, lessQuantity, removeProduct)
   totalPrice.textContent = `${eval(productPrice.join("+"))}`
 };
 
-/* Vérification de chaque champ du formulaire (rempli + conforme) */
+/* Vérification de chaque champ du formulaire */
 
 document.querySelectorAll(".cart__order__form__question > input")
 .forEach((input) => {
@@ -120,10 +120,10 @@ document.querySelectorAll(".cart__order__form__question > input")
     let isRegExOk = RegEx.test(input.value);
     let isRequired = input.required;
     console.log(input.parentNode.querySelector("p"))
-    if(isRequired == true && input.value == "") { /* si champ vide ... */
+    if(isRequired == true && input.value == "") {
       input.parentNode.querySelector("p").innerText = "le champ est requis";
       input.className="error";
-    } else if (isRegExOk == false) { /* si champ non conforme ... */
+    } else if (isRegExOk == false) {
       input.parentNode.querySelector("p").innerText = "le champ n'est pas sous le format souhaité";
       input.className="error";
     } else {
@@ -157,26 +157,23 @@ order.addEventListener("click", () => {
     jsonBody.products = addProduct.map((product) => {
       return product._id;
     });
-    
-    fetch(`http://localhost:3000/api/products/order`, { /* envoi des données pour la requête POST */
+    /* envoi des données pour la requête POST */
+    fetch(`http://localhost:3000/api/products/order`, {
 	    method: "POST",
 	    headers: { 
         'Accept': 'application/json', 
         'Content-Type': 'application/json' 
       },
       body: JSON.stringify(jsonBody)})
-      
-      .then(function(res) { /* réception des infos suite à la requête POST */
+      .then(function(res) {
         if (res.ok) {
           return res.text();
         }
       })
-      
-      .then(data => { /* ajout de l'order ID dans l'URL de la page confirmation */
+      .then(data => {
         let resPost = JSON.parse(data);
         document.location.href="confirmation.html?orderId="+resPost.orderId;
       });
-      
   } else if (localStorage.length == 0) { /* si le panier est vide ... */
     alert("Veuillez ajouter un produit à votre panier");
   }

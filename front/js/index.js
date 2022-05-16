@@ -1,5 +1,7 @@
 let productInfo = [];
 
+/* Récupération des infos de tous les produits de l'API */
+
 let productGet = async () => {
     await fetch("http://localhost:3000/api/products")
         .then((res) => res.json())
@@ -8,6 +10,8 @@ let productGet = async () => {
                 console.log(productInfo);
             });
 };
+
+/* Afichage des infos (image/nom/description) de tous les produits */
 
 let productDisplay = async () => {
     await productGet();
@@ -19,7 +23,7 @@ let productDisplay = async () => {
             <p class="productDescription">${product.description}</p>
         </article>
     `
-    ) 
+    )
         .join("");
 };
 

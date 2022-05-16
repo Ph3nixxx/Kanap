@@ -2,6 +2,8 @@ let product = window.location.search.split("?").join("");
 
 let productInfo = [];
 
+/* Récupération des infos produits de l'API pour le produit choisi seulement */
+
 let productGet = async () => {
     await fetch(`http://localhost:3000/api/products/${product}`)
         .then((res) => res.json())
@@ -10,6 +12,8 @@ let productGet = async () => {
                 console.log(productInfo);
             });
 };
+
+/* Afichage des infos produits pour le produit choisi seulement */
 
 let productDisplay = async () => {
     await productGet();
@@ -35,10 +39,14 @@ let productDisplay = async () => {
         eachColor.value = `${color}`;
         colorSelect.appendChild(eachColor);
     });
+    
     addToCart(productInfo);
 };
 
 productDisplay();
+
+/* Au clic sur le bouton "Ajouter au panier", création d'un tableau si produit/couleur n'existe pas. 
+Si produit/couleur existe, on ajoute la quantité sélectionnée au tableau existant */
 
 let addToCart = () => {
     let button = document.getElementById("addToCart");
@@ -51,10 +59,9 @@ let addToCart = () => {
             color : `${colorSelect.value}`,
             quantity : parseInt(quantity.value)
         });
-
         console.log(productColor);
 
-        if(productArray == null) {
+        if(productArray == null) { /* produit/couleur n'existe pas */
             productArray = [];
             productArray.push(productColor);
             localStorage.setItem("product", JSON.stringify(productArray));
@@ -63,30 +70,34 @@ let addToCart = () => {
                 if(productArray[i]._id == productInfo._id && productArray[i].color == colorSelect.value) {
                     return(
                         productArray[i].quantity += productColor.quantity,
-                        console.log("add quantity"),
                         localStorage.setItem("product",JSON.stringify(productArray)),
-                        (productArray = JSON.parse(localStorage.getItem("product")))
+                        productArray = JSON.parse(localStorage.getItem("product")),
+                        window.location.reload()
                     );
                 }
             }
-            for(i=0; i < productArray.length; i++) {
+            for(i=0; i < productArray.length; i++) { /* produit/couleur existe */
                 if((productArray[i]._id == productInfo._id && productArray[i].color != colorSelect.value) || productArray[i]._id != productInfo._id) {
                     return(
                         productArray.push(productColor),
                         localStorage.setItem("product", JSON.stringify(productArray)),
-                        (productArray = JSON.parse(localStorage.getItem("product")))
+                        productArray = JSON.parse(localStorage.getItem("product")),
+                        window.location.reload()
                     );
                 }
             }
         }
     });
     return(
-        productArray = JSON.parse(localStorage.getItem("product")));
+        productArray = JSON.parse(localStorage.getItem("product")))
 };
 
+/* Fonctionnalité : impossible d'ajouter un produit sans choisir une couleur au préalable */
+
 let onColorChange = () => {
-    let colors = document.getElementById("colors");
     let button = document.getElementById("addToCart");
+    let colors = document.getElementById("colors");
+
     if(colors.value == "empty") {
         button.disabled = true;
         colors.className="error";
@@ -97,4 +108,3 @@ let onColorChange = () => {
 };
 
 onColorChange();
-
