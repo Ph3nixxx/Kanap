@@ -1,31 +1,27 @@
-let addProduct = JSON.parse(localStorage.getItem("product"));
-
-let someProduct = [];
-
+let product = JSON.parse(localStorage.getItem("cartProducts"));
+console.log(product);
 /* Afichage des infos produits dans le panier pour le(s) produit(s) choisi(s) */
+let displayCart = async () => {
 
-let cartDisplay = async () => {
-    if(addProduct){
-        await addProduct;
-
-        document.getElementById("cart__items").innerHTML = addProduct.map((product) => `
-        <article class="cart__item" data-id="${product._id}" data-color="${product.color}">
+    if(product){
+        document.getElementById("cart__items").innerHTML = product.map((cartProducts) => `
+        <article class="cart__item" data-id="${cartProducts._id}" data-color="${cartProducts.color}">
           <div class="cart__item__img">
-            <img src="${product.imageUrl}" alt="${product.altTxt}">
+            <img src="${cartProducts.imageUrl}" alt="${cartProducts.altTxt}">
           </div>
           <div class="cart__item__content">
             <div class="cart__item__content__description">
-              <h2>${product.name}</h2>
-              <p>${product.color}</p>
-              <p>${product.price} €</p>
+              <h2>${cartProducts.name}</h2>
+              <p>${cartProducts.color}</p>
+              <p>${cartProducts.price} €</p>
             </div>
             <div class="cart__item__content__settings">
               <div class="cart__item__content__settings__quantity">
                 <p>Qté : </p>
-                <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}" data-id="${product._id}" data-color="${product.color}">
+                <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${cartProducts.quantity}" data-id="${pdt._id}" data-color="${cartProducts.color}">
               </div>
               <div class="cart__item__content__settings__delete">
-                <p class="deleteItem" data-id="${product._id}" data-color="${product.color}">Supprimer</p>
+                <p class="deleteItem" data-id="${cartProducts._id}" data-color="${cartProducts.color}">Supprimer</p>
               </div>
             </div>
           </div>
@@ -37,26 +33,26 @@ let cartDisplay = async () => {
         changeQuantity();
         removeProduct();
         totalAmount();
-    }
-}
+    };
+};
 
-cartDisplay();
+displayCart();
 
 /* Modification de la quantité via les flèches de l'input de chaque produit/couleur */
 
 let changeQuantity = async () => {
-  await cartDisplay;
+  await displayCart;
   let change = document.querySelectorAll(".itemQuantity");
   change.forEach((el) => {
     el.addEventListener("change", () => {
       return (
-        indexProduct = addProduct.findIndex(product => {
-          if(el.dataset.id == product._id && el.dataset.color == product.color) {
+        indexProduct = product.findIndex(pdt => {
+          if(el.dataset.id == pdt._id && el.dataset.color == pdt.color) {
             return true;
           }
         }),
-        addProduct[indexProduct].quantity = parseInt(el.value),
-        localStorage.setItem("product", JSON.stringify(addProduct)),
+        product[indexProduct].quantity = parseInt(el.value),
+        localStorage.setItem("cartProducts", JSON.stringify(product)),
         totalAmount() /* Recalcul du total prix à chaque changement de quantité */
       );
     });
@@ -65,24 +61,25 @@ let changeQuantity = async () => {
 
 /* Suppression d'un produit/couleur lorsque l'on clique sur le bouton "supprimer" d'un des produits du panier */
 
-let removeProduct = async (cartDisplay) => {
-  await cartDisplay;
+let removeProduct = async (displayCart) => {
+  await displayCart;
+  let someProducts = [];
   let deleteButton = document.querySelectorAll(".deleteItem");
   deleteButton.forEach((button) => {
     button.addEventListener("click", () => {
-      let totalRemovedProducts = addProduct.length;
+      let totalRemovedProducts = product.length;
       if(totalRemovedProducts == 1) {
         return (
-        localStorage.removeItem("product"),
+        localStorage.removeItem("cartProducts"),
         location.href = "cart.html" /* mise à jour du contenu de façon dynamique */
         );
       } else {
-        someProduct = addProduct.filter(el => {
+        someProducts = product.filter(el => {
           if(button.dataset.id != el._id || button.dataset.color != el.color) {
             return true;
           }
         })
-        localStorage.setItem("product", JSON.stringify(someProduct));
+        localStorage.setItem("cartProducts", JSON.stringify(someProducts));
         totalAmount(); /* Recalcul du total prix à chaque changement de quantité */
         location.href = "cart.html" /* mise à jour du contenu de façon dynamique */
       }
@@ -91,20 +88,18 @@ let removeProduct = async (cartDisplay) => {
 };
 
 /* Calcul du montant total du panier ainsi que la quantité totale de produits sélectionnés */
-
-let totalAmount = async (cartDisplay, plusQuantity, lessQuantity, removeProduct) => {
-  await cartDisplay;
-  await plusQuantity;
-  await lessQuantity;
+let totalAmount = async () => {
+  await displayCart;
+  await changeQuantity;
   await removeProduct;
 
   let productPrice = [];
   let productQuantity = [];
-  let dataArray = JSON.parse(localStorage.getItem("product"));
+  let productArray = JSON.parse(localStorage.getItem("cartProducts"));
 
-  dataArray.forEach((product) => {
-    productPrice.push(product.price * product.quantity);
-    productQuantity.push(product.quantity);
+  productArray.forEach((pdt) => {
+    productPrice.push(pdt.price * pdt.quantity);
+    productQuantity.push(pdt.quantity);
   });
 
   totalQuantity.textContent = `${eval(productQuantity.join("+"))}`
@@ -112,7 +107,6 @@ let totalAmount = async (cartDisplay, plusQuantity, lessQuantity, removeProduct)
 };
 
 /* Vérification de chaque champ du formulaire (rempli + conforme) */
-
 document.querySelectorAll(".cart__order__form__question > input")
 .forEach((input) => {
   input.addEventListener("focusout", () => {
@@ -134,7 +128,6 @@ document.querySelectorAll(".cart__order__form__question > input")
 });
 
 /* Confirmation de la commande via le bouton "Commander !" */
-
 let order = document.getElementById("order");
 
 order.addEventListener("click", () => {
@@ -154,8 +147,8 @@ order.addEventListener("click", () => {
     jsonBody.contact.address = document.getElementById("address").value;
     jsonBody.contact.city = document.getElementById("city").value;
     jsonBody.contact.email = document.getElementById("email").value;
-    jsonBody.products = addProduct.map((product) => {
-      return product._id;
+    jsonBody.products = product.map((pdt) => {
+      return pdt._id;
     });
     
     fetch(`http://localhost:3000/api/products/order`, { /* envoi des données pour la requête POST */

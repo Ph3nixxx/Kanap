@@ -1,22 +1,19 @@
-let productInfo = [];
+let productsInfo = [];
 
 /* Récupération des infos de tous les produits de l'API */
-
-let productGet = async () => {
+let getProducts = async () => {
     await fetch("http://localhost:3000/api/products")
         .then((res) => res.json())
             .then((promise) => {
-                productInfo = promise;
-                console.log(productInfo);
+                productsInfo = promise;
             });
 };
 
 /* Afichage des infos (image/nom/description) de tous les produits */
-
-let productDisplay = async () => {
-    await productGet();
-    document.getElementById("items").innerHTML = productInfo.map((product) => `
-    <a href="./product.html?${product._id}">
+let displayProducts = async () => {
+    await getProducts();
+    document.getElementById("items").innerHTML = productsInfo.map((product) => `
+    <a href="./product.html?productID=${product._id}">
         <article>
             <img src="${product.imageUrl}" alt="${product.altTxt}" />
             <h3 class="productName">${product.name}</h3>
@@ -27,4 +24,4 @@ let productDisplay = async () => {
         .join("");
 };
 
-productDisplay();
+displayProducts();

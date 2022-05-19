@@ -1,88 +1,74 @@
-let addProduct = JSON.parse(localStorage.getItem("product"));
+let product = JSON.parse(localStorage.getItem("cartProducts"));
 
-let someProduct = [];
-
-/* Afichage des infos produits pour le(s) produit(s) choisi(s) */
-
-let cartDisplay = async () => {
-    if(addProduct){
-        await addProduct;
-
-        document.getElementById("cart__items").innerHTML = addProduct.map((product) => `
-        <article class="cart__item" data-id="${product._id}" data-color="${product.color}">
-          <div class="cart__item__img">
-            <img src="${product.imageUrl}" alt="${product.altTxt}">
+/* Afichage des infos produits dans le panier pour le(s) produit(s) choisi(s) */
+let displayCart = async () => {
+  if(product){
+    document.getElementById("cart__items").innerHTML = product.map((pdt) => `
+      <article class="cart__item" data-id="${pdt._id}" data-color="${pdt.color}">
+        <div class="cart__item__img">
+          <img src="${pdt.imageUrl}" alt="${pdt.altTxt}">
+        </div>
+        <div class="cart__item__content">
+          <div class="cart__item__content__description">
+            <h2>${pdt.name}</h2>
+            <p>${pdt.color}</p>
+            <p>${pdt.price} €</p>
           </div>
-          <div class="cart__item__content">
-            <div class="cart__item__content__description">
-              <h2>${product.name}</h2>
-              <p>${product.color}</p>
-              <p>${product.price} €</p>
+          <div class="cart__item__content__settings">
+            <div class="cart__item__content__settings__quantity">
+              <p>Qté : </p>
+              <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${pdt.quantity}" data-id="${pdt._id}" data-color="${pdt.color}">
             </div>
-            <div class="cart__item__content__settings">
-              <div class="cart__item__content__settings__quantity">
-                <p>Qté : </p>
-                <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}" data-id="${product._id}" data-color="${product.color}">
-              </div>
-              <div class="cart__item__content__settings__delete">
-                <p class="deleteItem" data-id="${product._id}" data-color="${product.color}">Supprimer</p>
-              </div>
+            <div class="cart__item__content__settings__delete">
+              <p class="deleteItem" data-id="${pdt._id}" data-color="${pdt.color}">Supprimer</p>
             </div>
           </div>
-        </article>
-        `
-        )
-        .join("");
+        </div>
+      </article>
+    `
+    )
+      .join("");
+    };
+};
 
-        changeQuantity();
-        removeProduct();
-        totalAmount();
-    }
-}
-
-cartDisplay();
-
-/* Modification de la quantité via les flèches de l'input */
-
+/* Modification de la quantité via les flèches de l'input de chaque produit/couleur */
 let changeQuantity = async () => {
-  await cartDisplay;
+  await displayCart();
   let change = document.querySelectorAll(".itemQuantity");
   change.forEach((el) => {
     el.addEventListener("change", () => {
-      return (
-        indexProduct = addProduct.findIndex(product => {
-          if(el.dataset.id == product._id && el.dataset.color == product.color) {
-            return true;
-          }
-        }),
-        addProduct[indexProduct].quantity = parseInt(el.value),
-        localStorage.setItem("product", JSON.stringify(addProduct)),
-        totalAmount() /* Recalcul du total prix à chaque changement de quantité */
-      );
+      indexProduct = product.findIndex(pdt => {
+        if(el.dataset.id == pdt._id && el.dataset.color == pdt.color) {
+          return true;
+        }
+      }),
+      product[indexProduct].quantity = parseInt(el.value),
+      localStorage.setItem("cartProducts", JSON.stringify(product)),
+      totalAmount() /* Recalcul du total prix à chaque changement de quantité */
     });
   });
 };
 
-/* Suppression d'un produit lorsque l'on clique sur le bouton "supprimer" d'un des produits du panier */
-
-let removeProduct = async (cartDisplay) => {
-  await cartDisplay;
+/* Suppression d'un produit/couleur lorsque l'on clique sur le bouton "supprimer" d'un des produits du panier */
+let removeProduct = async (displayCart) => {
+  await displayCart;
+  let someProducts = [];
   let deleteButton = document.querySelectorAll(".deleteItem");
   deleteButton.forEach((button) => {
     button.addEventListener("click", () => {
-      let totalRemovedProducts = addProduct.length;
+      let totalRemovedProducts = product.length;
       if(totalRemovedProducts == 1) {
         return (
-        localStorage.removeItem("product"),
+        localStorage.removeItem("cartProducts"),
         location.href = "cart.html" /* mise à jour du contenu de façon dynamique */
         );
       } else {
-        someProduct = addProduct.filter(el => {
+        someProducts = product.filter(el => {
           if(button.dataset.id != el._id || button.dataset.color != el.color) {
             return true;
           }
         })
-        localStorage.setItem("product", JSON.stringify(someProduct));
+        localStorage.setItem("cartProducts", JSON.stringify(someProducts));
         totalAmount(); /* Recalcul du total prix à chaque changement de quantité */
         location.href = "cart.html" /* mise à jour du contenu de façon dynamique */
       }
@@ -91,28 +77,21 @@ let removeProduct = async (cartDisplay) => {
 };
 
 /* Calcul du montant total du panier ainsi que la quantité totale de produits sélectionnés */
-
-let totalAmount = async (cartDisplay, plusQuantity, lessQuantity, removeProduct) => {
-  await cartDisplay;
-  await plusQuantity;
-  await lessQuantity;
-  await removeProduct;
-
+let totalAmount = async () => {
   let productPrice = [];
   let productQuantity = [];
-  let dataArray = JSON.parse(localStorage.getItem("product"));
+  let productArray = JSON.parse(localStorage.getItem("cartProducts"));
 
-  dataArray.forEach((product) => {
-    productPrice.push(product.price * product.quantity);
-    productQuantity.push(product.quantity);
+  productArray.forEach((pdt) => {
+    productPrice.push(pdt.price * pdt.quantity);
+    productQuantity.push(pdt.quantity);
   });
 
   totalQuantity.textContent = `${eval(productQuantity.join("+"))}`
   totalPrice.textContent = `${eval(productPrice.join("+"))}`
 };
 
-/* Vérification de chaque champ du formulaire */
-
+/* Vérification de chaque champ du formulaire (rempli + conforme) */
 document.querySelectorAll(".cart__order__form__question > input")
 .forEach((input) => {
   input.addEventListener("focusout", () => {
@@ -120,10 +99,10 @@ document.querySelectorAll(".cart__order__form__question > input")
     let isRegExOk = RegEx.test(input.value);
     let isRequired = input.required;
     console.log(input.parentNode.querySelector("p"))
-    if(isRequired == true && input.value == "") {
+    if(isRequired == true && input.value == "") { /* si champ vide ... */
       input.parentNode.querySelector("p").innerText = "le champ est requis";
       input.className="error";
-    } else if (isRegExOk == false) {
+    } else if (isRegExOk == false) { /* si champ non conforme ... */
       input.parentNode.querySelector("p").innerText = "le champ n'est pas sous le format souhaité";
       input.className="error";
     } else {
@@ -134,7 +113,6 @@ document.querySelectorAll(".cart__order__form__question > input")
 });
 
 /* Confirmation de la commande via le bouton "Commander !" */
-
 let order = document.getElementById("order");
 
 order.addEventListener("click", () => {
@@ -154,27 +132,35 @@ order.addEventListener("click", () => {
     jsonBody.contact.address = document.getElementById("address").value;
     jsonBody.contact.city = document.getElementById("city").value;
     jsonBody.contact.email = document.getElementById("email").value;
-    jsonBody.products = addProduct.map((product) => {
-      return product._id;
+    jsonBody.products = product.map((pdt) => {
+      return pdt._id;
     });
-    /* envoi des données pour la requête POST */
-    fetch(`http://localhost:3000/api/products/order`, {
+    
+    fetch(`http://localhost:3000/api/products/order`, { /* envoi des données pour la requête POST */
 	    method: "POST",
 	    headers: { 
         'Accept': 'application/json', 
         'Content-Type': 'application/json' 
       },
       body: JSON.stringify(jsonBody)})
-      .then(function(res) {
+      
+      .then(function(res) { /* réception des infos suite à la requête POST */
         if (res.ok) {
           return res.text();
         }
       })
-      .then(data => {
+      
+      .then(data => { /* ajout de l'order ID dans l'URL de la page confirmation */
         let resPost = JSON.parse(data);
         document.location.href="confirmation.html?orderId="+resPost.orderId;
       });
+      
   } else if (localStorage.length == 0) { /* si le panier est vide ... */
     alert("Veuillez ajouter un produit à votre panier");
   }
 });
+
+displayCart();
+changeQuantity();
+removeProduct();
+totalAmount();
