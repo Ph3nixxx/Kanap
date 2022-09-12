@@ -1,33 +1,56 @@
-let product = JSON.parse(localStorage.getItem("cartProducts"));
+let cart = JSON.parse(localStorage.getItem("cartProducts"));
+
+let productRef = [];
+
+/* Récupération des infos produits de l'API pour les produits choisis seulement */
+let getProduct = async () => {
+  return Promise.all(cart.map((p) => {
+    return fetch(`http://localhost:3000/api/products/${p.id}`)
+      .then((res) => res.json())
+  }));
+}; /* NB : on va chercher plusieurs fois le même produit s'il est choisi en plusieurs couleurs */
+
+getProduct()
+  .then((promises) => {
+    productRef = promises;
+    displayCart();
+    changeQuantity();
+    removeProduct();
+    totalAmount();
+  });
 
 /* Afichage des infos produits dans le panier pour le(s) produit(s) choisi(s) */
 let displayCart = async () => {
-  if(product){
-    document.getElementById("cart__items").innerHTML = product.map((pdt) => `
-      <article class="cart__item" data-id="${pdt._id}" data-color="${pdt.color}">
+  if(cart){
+    document.getElementById("cart__items").innerHTML = cart.map((pdt) => {
+      let info = productRef.find((ref) => {
+        return ref._id == pdt.id;
+      })
+      return `
+      <article class="cart__item" data-id="${info._id}" data-color="${pdt.color}">
         <div class="cart__item__img">
-          <img src="${pdt.imageUrl}" alt="${pdt.altTxt}">
+          <img src="${info.imageUrl}" alt="${info.altTxt}">
         </div>
         <div class="cart__item__content">
           <div class="cart__item__content__description">
-            <h2>${pdt.name}</h2>
+            <h2>${info.name}</h2>
             <p>${pdt.color}</p>
-            <p>${pdt.price} €</p>
+            <p>${info.price} €</p>
           </div>
           <div class="cart__item__content__settings">
             <div class="cart__item__content__settings__quantity">
               <p>Qté : </p>
-              <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${pdt.quantity}" data-id="${pdt._id}" data-color="${pdt.color}">
+              <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${pdt.quantity}" data-id="${info._id}" data-color="${pdt.color}">
             </div>
             <div class="cart__item__content__settings__delete">
-              <p class="deleteItem" data-id="${pdt._id}" data-color="${pdt.color}">Supprimer</p>
+              <p class="deleteItem" data-id="${info._id}" data-color="${pdt.color}">Supprimer</p>
             </div>
           </div>
         </div>
       </article>
-    `
-    )
-      .join("");
+    `;
+  })
+    .join("");
     };
 };
 
@@ -37,14 +60,22 @@ let changeQuantity = async () => {
   let change = document.querySelectorAll(".itemQuantity");
   change.forEach((el) => {
     el.addEventListener("change", () => {
-      indexProduct = product.findIndex(pdt => {
-        if(el.dataset.id == pdt._id && el.dataset.color == pdt.color) {
+      indexProduct = cart.findIndex(pdt => {
+        if(el.dataset.id == pdt.id && el.dataset.color == pdt.color) {
           return true;
         }
-      }),
-      product[indexProduct].quantity = parseInt(el.value),
-      localStorage.setItem("cartProducts", JSON.stringify(product)),
-      totalAmount() /* Recalcul du total prix à chaque changement de quantité */
+      });
+      if(
+        parseInt(el.value) >0 && 
+        parseInt(el.value) <=100
+        ) {
+        cart[indexProduct].quantity = parseInt(el.value);
+        localStorage.setItem("cartProducts", JSON.stringify(cart));
+        totalAmount() /* Recalcul du total prix à chaque changement de quantité */
+      } else {
+        alert ("La quantité totale d'un produit doit être entre 1 et 100");
+        window.location.reload();
+      }
     });
   });
 };
@@ -56,15 +87,15 @@ let removeProduct = async (displayCart) => {
   let deleteButton = document.querySelectorAll(".deleteItem");
   deleteButton.forEach((button) => {
     button.addEventListener("click", () => {
-      let totalRemovedProducts = product.length;
-      if(totalRemovedProducts == 1) {
+      let totalRemovedProducts = cart.length;
+      if(totalRemovedProducts == 1) { /* s'il n'y a qu'un seul produit */
         return (
         localStorage.removeItem("cartProducts"),
         location.href = "cart.html" /* mise à jour du contenu de façon dynamique */
         );
-      } else {
-        someProducts = product.filter(el => {
-          if(button.dataset.id != el._id || button.dataset.color != el.color) {
+      } else { /* s'il y a plusieurs produits */
+        someProducts = cart.filter(el => {
+          if(button.dataset.id != el.id || button.dataset.color != el.color) {
             return true;
           }
         })
@@ -80,10 +111,12 @@ let removeProduct = async (displayCart) => {
 let totalAmount = async () => {
   let productPrice = [];
   let productQuantity = [];
-  let productArray = JSON.parse(localStorage.getItem("cartProducts"));
 
-  productArray.forEach((pdt) => {
-    productPrice.push(pdt.price * pdt.quantity);
+  cart.forEach((pdt) => {
+    let info = productRef.find((ref) => {
+      return ref._id == pdt.id;
+    })
+    productPrice.push(info.price * pdt.quantity);
     productQuantity.push(pdt.quantity);
   });
 
@@ -98,14 +131,13 @@ document.querySelectorAll(".cart__order__form__question > input")
     let RegEx = RegExp(input.pattern);
     let isRegExOk = RegEx.test(input.value);
     let isRequired = input.required;
-    console.log(input.parentNode.querySelector("p"))
     if(isRequired == true && input.value == "") { /* si champ vide ... */
       input.parentNode.querySelector("p").innerText = "le champ est requis";
       input.className="error";
     } else if (isRegExOk == false) { /* si champ non conforme ... */
       input.parentNode.querySelector("p").innerText = "le champ n'est pas sous le format souhaité";
       input.className="error";
-    } else {
+    } else { /* si tout va bien ... */
       input.parentNode.querySelector("p").innerText = "";
       input.className="";
     }
@@ -132,8 +164,8 @@ order.addEventListener("click", () => {
     jsonBody.contact.address = document.getElementById("address").value;
     jsonBody.contact.city = document.getElementById("city").value;
     jsonBody.contact.email = document.getElementById("email").value;
-    jsonBody.products = product.map((pdt) => {
-      return pdt._id;
+    jsonBody.products = cart.map((pdt) => {
+      return pdt.id;
     });
     
     fetch(`http://localhost:3000/api/products/order`, { /* envoi des données pour la requête POST */
@@ -152,15 +184,12 @@ order.addEventListener("click", () => {
       
       .then(data => { /* ajout de l'order ID dans l'URL de la page confirmation */
         let resPost = JSON.parse(data);
+        localStorage.removeItem("cartProducts");
         document.location.href="confirmation.html?orderId="+resPost.orderId;
       });
+
       
   } else if (localStorage.length == 0) { /* si le panier est vide ... */
     alert("Veuillez ajouter un produit à votre panier");
   }
 });
-
-displayCart();
-changeQuantity();
-removeProduct();
-totalAmount();

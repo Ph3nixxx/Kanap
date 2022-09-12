@@ -1,0 +1,1 @@
+Lancer le server du port 3000 en backend, en indiquant dans le terminal "npm start" !

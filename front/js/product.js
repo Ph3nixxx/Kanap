@@ -20,11 +20,11 @@ let displayProduct = async () => {
         document.getElementById("title").innerText = `
         ${param.name}
         `
+        document.getElementById("name").innerText = `
+        ${param.name}
+        `
         document.getElementById("item__img").innerHTML = `
         <img src="${param.imageUrl}" alt="${param.altTxt}">
-        `
-        document.getElementById("title").innerHTML = `
-        ${param.name}
         `
         document.getElementById("price").innerHTML = `
         ${param.price}
@@ -48,37 +48,49 @@ let displayProduct = async () => {
 
 displayProduct();
 
+let triggerAlertQuantity = (quantity, productArray) => {
+    if(quantity >0 && quantity <=100) {
+        localStorage.setItem("cartProducts", JSON.stringify(productArray));
+        productArray = JSON.parse(localStorage.getItem("cartProducts"));
+        alert("Une nouvelle quantité a été ajouté à votre panier");
+    } else {
+        alert ("La quantité totale d'un produit doit être entre 1 et 100");
+    }
+};
+
 /* Au clic sur le bouton "Ajouter au panier", création d'un tableau si produit/couleur n'existe pas. 
 Si produit/couleur existe, on ajoute la quantité sélectionnée au tableau existant */
 let addToCart = () => {
     let button = document.getElementById("addToCart");
     button.addEventListener("click", () => {
-        let productArray = JSON.parse(localStorage.getItem("cartProducts"));
+        let productArray = JSON.parse(localStorage.getItem("cartProducts"));    
 
         let colorSelect = document.getElementById("colors");
 
-        let productWithColorAndQuantity = Object.assign({}, productInfo, {
+        let productWithColorAndQuantity = {
+            id : productInfo._id,
             color : `${colorSelect.value}`,
             quantity : parseInt(quantity.value)
-        });
+        };
 
-        if(productArray == null) { /* produit/couleur n'existe pas */
+        if(productArray == null) { /* panier n'existe pas */
             productArray = [];
             productArray.push(productWithColorAndQuantity);
-            localStorage.setItem("cartProducts", JSON.stringify(productArray));
+            triggerAlertQuantity(productArray[0].quantity, productArray);
         } else if(productArray != null) { 
             let index = productArray.findIndex((p) => {
-                return p._id == productInfo._id && p.color == colorSelect.value ;
+                return p.id == productInfo._id && p.color == colorSelect.value ;
             });
-            if(index != -1){
-                productArray[index].quantity += productWithColorAndQuantity.quantity;
-            } else {
+            if(index != -1){ /* produit/couleur existe */
+                let newQuantity = productArray[index].quantity += productWithColorAndQuantity.quantity;
+                triggerAlertQuantity(newQuantity, productArray);
+            } else { /* produit/couleur n'existe pas */
                 productArray.push(productWithColorAndQuantity);
+                localStorage.setItem("cartProducts", JSON.stringify(productArray));
+                productArray = JSON.parse(localStorage.getItem("cartProducts"));
+                alert("Un nouveau produit a été ajouté à votre panier");
             }
-            localStorage.setItem("cartProducts", JSON.stringify(productArray));
-            productArray = JSON.parse(localStorage.getItem("cartProducts"));
         };
-        window.location.reload();
     });
 };
 
